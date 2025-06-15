@@ -71,10 +71,18 @@ try {
 
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings" -Name "RestartForFeatureUpdatesEnabled" -Value 1 -Type DWord
 
-# --------- INSTALACIÓN DE SOFTWARE BÁSICO (winget) ---------
-winget install --id=7zip.7zip -e --accept-package-agreements --accept-source-agreements
-winget install --id=Notepad++.Notepad++ -e --accept-package-agreements --accept-source-agreements
-winget install --id=Microsoft.Teams -e --accept-package-agreements --accept-source-agreements
+# --------- INSTALACIÓN DE SOFTWARE BÁSICO (usando MSI/EXE) ---------
+# Instala 7-Zip
+Invoke-WebRequest -Uri "https://www.7-zip.org/a/7z2301-x64.exe" -OutFile "$env:TEMP\7z.exe"
+Start-Process "$env:TEMP\7z.exe" -ArgumentList "/S" -Wait
+
+# Instala Notepad++
+Invoke-WebRequest -Uri "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.8/npp.8.6.8.Installer.x64.exe" -OutFile "$env:TEMP\npp.exe"
+Start-Process "$env:TEMP\npp.exe" -ArgumentList "/S" -Wait
+
+# Instala Teams clásico (MSI)
+Invoke-WebRequest -Uri "https://statics.teams.cdn.office.net/production-windows-x64/enterprise/webview2/lkg/Teams_windows_x64.msi" -OutFile "$env:TEMP\teams.msi"
+Start-Process msiexec.exe -ArgumentList "/i $env:TEMP\teams.msi /qn" -Wait
 
 # --------- MODO OSCURO PARA TODOS LOS USUARIOS ---------
 # Usuario actual
@@ -95,6 +103,57 @@ $defaultUserKey = "Registry::HKEY_USERS\.DEFAULT\Software\Microsoft\Windows\Curr
 if (-not (Test-Path $defaultUserKey)) { New-Item -Path $defaultUserKey -Force | Out-Null }
 New-ItemProperty -Path $defaultUserKey -Name "AppsUseLightTheme" -PropertyType DWord -Value 0 -Force
 New-ItemProperty -Path $defaultUserKey -Name "SystemUsesLightTheme" -PropertyType DWord -Value 0 -Force
+
+# --------- LIMPIEZA DE TEMPORALES Y LOGS ---------
+Remove-Item -Path "C:\Windows\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
+wevtutil el | Foreach-Object {wevtutil cl "$_"} 2>$null
+
+# --------- HABILITAR STORAGE SENSE (Limpiador automático) ---------
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy" -Name "01" -Value 1 -Type DWord
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy" -Name "08" -Value 30 -Type DWord
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy" -Name "32" -Value 30 -Type DWord
+
+# --------- ELIMINAR BLOATWARE ---------
+$unwantedApps = @(
+    "king.com.CandyCrushSaga",
+    "king.com.CandyCrushSodaSaga",
+    "Microsoft.SkypeApp",
+    "Microsoft.ZuneMusic",
+    "Microsoft.ZuneVideo",
+    "Microsoft.XboxApp",
+    "Microsoft.XboxGameOverlay",
+    "Microsoft.XboxGamingOverlay",
+    "Microsoft.XboxIdentityProvider",
+    "Microsoft.XboxSpeechToTextOverlay",
+    "Microsoft.Xbox.TCUI",
+    "SpotifyAB.SpotifyMusic",
+    "Microsoft.GetHelp",
+    "Microsoft.Getstarted",
+    "Microsoft.Microsoft3DViewer",
+    "Microsoft.MicrosoftSolitaireCollection",
+    "Microsoft.MicrosoftStickyNotes",
+    "Microsoft.MixedReality.Portal",
+    "Microsoft.OneConnect",
+    "Microsoft.People",
+    "Microsoft.Print3D",
+    "Microsoft.WindowsAlarms",
+    "Microsoft.WindowsFeedbackHub",
+    "Microsoft.WindowsMaps",
+    "Microsoft.WindowsSoundRecorder",
+    "Microsoft.YourPhone",
+    "Microsoft.Office.OneNote"
+)
+foreach ($app in $unwantedApps) {
+    Get-AppxPackage -Name $app -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
+    Get-AppxProvisionedPackage -Online | Where-Object DisplayName -EQ $app | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
+}
+
+# --------- DESACTIVAR SERVICIOS INNECESARIOS (Ejemplo: Xbox Game Bar) ---------
+Stop-Service -Name "XboxNetApiSvc" -ErrorAction SilentlyContinue
+Set-Service -Name "XboxNetApiSvc" -StartupType Disabled -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\GameDVR" -Name "AppCaptureEnabled" -Value 0 -Type DWord
+Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled" -Value 0 -Type DWord
 
 # --------- REINICIO FINAL ---------
 Restart-Computer -Force
