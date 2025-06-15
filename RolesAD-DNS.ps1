@@ -1,17 +1,20 @@
-# instalaAD_DNS.ps1
+# RolesAD-DNS.ps1
+# Instalación 100% desatendida de ADDS y DNS, creación de dominio DominioA.local
 
 $domainName = "DominioA.local"
-$netbiosName = "DominioA"
-$adminPass = "Naxvan1993"  # Usa una contraseña fuerte o pásala como parámetro seguro
+$netbiosName = "DOMINIOA"
+$dsrmPassword = ConvertTo-SecureString "Naxvan1993" -AsPlainText -Force  # Cambia la contraseña por seguridad
 
 # Instala los roles
 Install-WindowsFeature -Name AD-Domain-Services, DNS -IncludeManagementTools
 
-# Promueve el servidor como controlador de dominio raíz en un nuevo bosque
-Import-Module ADDSDeployment
+# Instala el dominio de manera desatendida
 Install-ADDSForest `
     -DomainName $domainName `
     -DomainNetbiosName $netbiosName `
-    -SafeModeAdministratorPassword (ConvertTo-SecureString $adminPass -AsPlainText -Force) `
+    -SafeModeAdministratorPassword $dsrmPassword `
+    -InstallDns `
     -Force `
-    -NoRebootOnCompletion $false
+    -NoRebootOnCompletion:$false  # Reinicia automáticamente después
+
+# El servidor se reiniciará solo tras la promoción como DC.
