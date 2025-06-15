@@ -1,45 +1,66 @@
-# Instalar el paquete de idioma español (España)
+# ============================
+# Automatismos.ps1
+# Configuración automática VM Windows 11 en español (Azure)
+# ============================
+
+# --------- IDIOMA, TECLADO, ZONA HORARIA ---------
 Add-WindowsCapability -Online -Name Language.Basic~~~es-ES~0.0.1.0
 Add-WindowsCapability -Online -Name Language.Handwriting~~~es-ES~0.0.1.0
 Add-WindowsCapability -Online -Name Language.OCR~~~es-ES~0.0.1.0
 Add-WindowsCapability -Online -Name Language.Speech~~~es-ES~0.0.1.0
 Add-WindowsCapability -Online -Name Language.TextToSpeech~~~es-ES~0.0.1.0
 
-# Esperar unos segundos para asegurar que los paquetes se han instalado
 Start-Sleep -Seconds 10
 
-# Configura español como idioma principal y de sistema
 Set-WinSystemLocale es-ES
 Set-WinUserLanguageList es-ES -Force
 Set-Culture es-ES
 Set-WinUILanguageOverride es-ES
 Set-WinHomeLocation -GeoId 195 # España
-
-# Cambia la zona horaria a Madrid
 Set-TimeZone -Id "Romance Standard Time"
 
-# Añade el layout de teclado español (España) y lo deja como predeterminado
+# Configuración de teclado español (España)
 $LangList = Get-WinUserLanguageList
 $LangList[0].InputMethodTips.Clear()
 $LangList[0].InputMethodTips.Add("040a:0000040a")
 Set-WinUserLanguageList $LangList -Force
 
-# Opcional: Quita otros teclados (como en-US) si existieran
-$LangList = Get-WinUserLanguageList
-$LangList = $LangList | Where-Object { $_.LanguageTag -eq "es-ES" }
+# Deja sólo es-ES como idioma
+$LangList = Get-WinUserLanguageList | Where-Object { $_.LanguageTag -eq "es-ES" }
 Set-WinUserLanguageList $LangList -Force
 
-# Hacer que el idioma sea predeterminado para la pantalla de bienvenida y nuevos usuarios
 Set-WinUILanguageOverride -Language es-ES
 Set-WinSystemLocale -SystemLocale es-ES
 Set-WinDefaultInputMethodOverride -InputTip "040a:0000040a"
 
-# --- Opciones AVANZADAS de Windows Update ---
+# --------- COPIAR CONFIGURACIÓN REGIONAL (TRUCO PARA FORZAR DISPLAY LANGUAGE) ---------
+$xml = @"
+<gs:GlobalizationServices xmlns:gs="urn:longhornGlobalizationUnattend">
+  <gs:UserList>
+    <gs:User UserID="Current"/>
+  </gs:UserList>
+  <gs:UserLocale>
+    <gs:Locale Name="es-ES" SetAsCurrent="true"/>
+  </gs:UserLocale>
+  <gs:UILanguage>
+    <gs:UILanguageID>es-ES</gs:UILanguageID>
+  </gs:UILanguage>
+  <gs:InputPreferences>
+    <gs:InputLanguageID Action="add" ID="040a:0000040a"/>
+  </gs:InputPreferences>
+  <gs:SystemLocale Name="es-ES"/>
+  <gs:GeoID Value="195"/>
+  <gs:LocationPreferences>
+    <gs:GeoID Value="195"/>
+  </gs:LocationPreferences>
+</gs:GlobalizationServices>
+"@
+Set-Content -Path "$env:TEMP\es-ES.xml" -Value $xml -Encoding UTF8
+& "$env:SystemRoot\System32\control.exe" "intl.cpl,,/f:`"$env:TEMP\es-ES.xml`""
 
-# Activar "Get the latest updates as soon as they’re available"
+# --------- WINDOWS UPDATE OPCIONES AVANZADAS ---------
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings" -Name "IsContinuousInnovationOptedIn" -Value 1 -Type DWord
 
-# Activar “Receive updates for other Microsoft products”
 try {
     $ServiceManager = New-Object -ComObject Microsoft.Update.ServiceManager
     $ServiceManager.ClientApplicationID = "My App"
@@ -48,8 +69,32 @@ try {
     Write-Output "Microsoft Update ya estaba registrado o no es necesario registrar."
 }
 
-# Activar “Get me up to date” (permite reinicio automático si es necesario)
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings" -Name "RestartForFeatureUpdatesEnabled" -Value 1 -Type DWord
 
-# Reinicia para aplicar todos los cambios (muy recomendable)
+# --------- INSTALACIÓN DE SOFTWARE BÁSICO (winget) ---------
+winget install --id=7zip.7zip -e --accept-package-agreements --accept-source-agreements
+winget install --id=Notepad++.Notepad++ -e --accept-package-agreements --accept-source-agreements
+winget install --id=Microsoft.Teams -e --accept-package-agreements --accept-source-agreements
+
+# --------- MODO OSCURO PARA TODOS LOS USUARIOS ---------
+# Usuario actual
+New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -PropertyType DWord -Value 0 -Force
+New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "SystemUsesLightTheme" -PropertyType DWord -Value 0 -Force
+# Todos los usuarios existentes
+$users = Get-ChildItem 'HKU:' | Where-Object { $_.Name -match '^HKEY_USERS\\S-' }
+foreach ($user in $users) {
+    try {
+        $regPath = "$($user.PSPath)\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+        if (-not (Test-Path $regPath)) { New-Item -Path $regPath -Force | Out-Null }
+        New-ItemProperty -Path $regPath -Name "AppsUseLightTheme" -PropertyType DWord -Value 0 -Force
+        New-ItemProperty -Path $regPath -Name "SystemUsesLightTheme" -PropertyType DWord -Value 0 -Force
+    } catch { }
+}
+# Para nuevos usuarios (Default User)
+$defaultUserKey = "Registry::HKEY_USERS\.DEFAULT\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+if (-not (Test-Path $defaultUserKey)) { New-Item -Path $defaultUserKey -Force | Out-Null }
+New-ItemProperty -Path $defaultUserKey -Name "AppsUseLightTheme" -PropertyType DWord -Value 0 -Force
+New-ItemProperty -Path $defaultUserKey -Name "SystemUsesLightTheme" -PropertyType DWord -Value 0 -Force
+
+# --------- REINICIO FINAL ---------
 Restart-Computer -Force
