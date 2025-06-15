@@ -3,12 +3,12 @@
 # Configuración automática VM Windows 11 en español (Azure)
 # ============================
 
-# --------- IDIOMA, TECLADO, ZONA HORARIA ---------
-Add-WindowsCapability -Online -Name Language.Basic~~~es-ES~0.0.1.0
-Add-WindowsCapability -Online -Name Language.Handwriting~~~es-ES~0.0.1.0
-Add-WindowsCapability -Online -Name Language.OCR~~~es-ES~0.0.1.0
-Add-WindowsCapability -Online -Name Language.Speech~~~es-ES~0.0.1.0
-Add-WindowsCapability -Online -Name Language.TextToSpeech~~~es-ES~0.0.1.0
+# --------- IDIOMA, TECLADO, ZONA HORARIA (con DISM) ---------
+dism.exe /Online /Add-Capability /CapabilityName:Language.Basic~~~es-ES~0.0.1.0
+dism.exe /Online /Add-Capability /CapabilityName:Language.Handwriting~~~es-ES~0.0.1.0
+dism.exe /Online /Add-Capability /CapabilityName:Language.OCR~~~es-ES~0.0.1.0
+dism.exe /Online /Add-Capability /CapabilityName:Language.Speech~~~es-ES~0.0.1.0
+dism.exe /Online /Add-Capability /CapabilityName:Language.TextToSpeech~~~es-ES~0.0.1.0
 
 Start-Sleep -Seconds 10
 
@@ -33,7 +33,7 @@ Set-WinUILanguageOverride -Language es-ES
 Set-WinSystemLocale -SystemLocale es-ES
 Set-WinDefaultInputMethodOverride -InputTip "040a:0000040a"
 
-# --------- COPIAR CONFIGURACIÓN REGIONAL (TRUCO PARA FORZAR DISPLAY LANGUAGE) ---------
+# Copiar configuración regional (pantalla bienvenida y nuevos usuarios)
 $xml = @"
 <gs:GlobalizationServices xmlns:gs="urn:longhornGlobalizationUnattend">
   <gs:UserList>
@@ -71,7 +71,7 @@ try {
 
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings" -Name "RestartForFeatureUpdatesEnabled" -Value 1 -Type DWord
 
-# --------- INSTALACIÓN DE SOFTWARE BÁSICO (usando MSI/EXE) ---------
+# --------- INSTALACIÓN DE SOFTWARE BÁSICO (usando MSI/EXE, sin Teams) ---------
 # Instala 7-Zip
 Invoke-WebRequest -Uri "https://www.7-zip.org/a/7z2301-x64.exe" -OutFile "$env:TEMP\7z.exe"
 Start-Process "$env:TEMP\7z.exe" -ArgumentList "/S" -Wait
@@ -79,10 +79,6 @@ Start-Process "$env:TEMP\7z.exe" -ArgumentList "/S" -Wait
 # Instala Notepad++
 Invoke-WebRequest -Uri "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.8/npp.8.6.8.Installer.x64.exe" -OutFile "$env:TEMP\npp.exe"
 Start-Process "$env:TEMP\npp.exe" -ArgumentList "/S" -Wait
-
-# Instala Teams clásico (MSI)
-Invoke-WebRequest -Uri "https://statics.teams.cdn.office.net/production-windows-x64/enterprise/webview2/lkg/Teams_windows_x64.msi" -OutFile "$env:TEMP\teams.msi"
-Start-Process msiexec.exe -ArgumentList "/i $env:TEMP\teams.msi /qn" -Wait
 
 # --------- MODO OSCURO PARA TODOS LOS USUARIOS ---------
 # Usuario actual
