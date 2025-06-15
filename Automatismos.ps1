@@ -1,62 +1,17 @@
 # ============================
 # Automatismos.ps1
-# Configuración automática VM Windows 11 en español (Azure)
+# Configuración VM Windows 11 (teclado ES, horario Madrid, apps y limpieza)
 # ============================
 
-# --------- IDIOMA, TECLADO, ZONA HORARIA (con DISM) ---------
-dism.exe /Online /Add-Capability /CapabilityName:Language.Basic~~~es-ES~0.0.1.0
-dism.exe /Online /Add-Capability /CapabilityName:Language.Handwriting~~~es-ES~0.0.1.0
-dism.exe /Online /Add-Capability /CapabilityName:Language.OCR~~~es-ES~0.0.1.0
-dism.exe /Online /Add-Capability /CapabilityName:Language.Speech~~~es-ES~0.0.1.0
-dism.exe /Online /Add-Capability /CapabilityName:Language.TextToSpeech~~~es-ES~0.0.1.0
-
-Start-Sleep -Seconds 10
-
-Set-WinSystemLocale es-ES
-Set-WinUserLanguageList es-ES -Force
-Set-Culture es-ES
-Set-WinUILanguageOverride es-ES
-Set-WinHomeLocation -GeoId 195 # España
+# --------- ZONA HORARIA (Madrid) ---------
 Set-TimeZone -Id "Romance Standard Time"
 
-# Configuración de teclado español (España)
+# --------- TECLADO ESPAÑOL (España) ---------
 $LangList = Get-WinUserLanguageList
 $LangList[0].InputMethodTips.Clear()
 $LangList[0].InputMethodTips.Add("040a:0000040a")
 Set-WinUserLanguageList $LangList -Force
-
-# Deja sólo es-ES como idioma
-$LangList = Get-WinUserLanguageList | Where-Object { $_.LanguageTag -eq "es-ES" }
-Set-WinUserLanguageList $LangList -Force
-
-Set-WinUILanguageOverride -Language es-ES
-Set-WinSystemLocale -SystemLocale es-ES
 Set-WinDefaultInputMethodOverride -InputTip "040a:0000040a"
-
-# Copiar configuración regional (pantalla bienvenida y nuevos usuarios)
-$xml = @"
-<gs:GlobalizationServices xmlns:gs="urn:longhornGlobalizationUnattend">
-  <gs:UserList>
-    <gs:User UserID="Current"/>
-  </gs:UserList>
-  <gs:UserLocale>
-    <gs:Locale Name="es-ES" SetAsCurrent="true"/>
-  </gs:UserLocale>
-  <gs:UILanguage>
-    <gs:UILanguageID>es-ES</gs:UILanguageID>
-  </gs:UILanguage>
-  <gs:InputPreferences>
-    <gs:InputLanguageID Action="add" ID="040a:0000040a"/>
-  </gs:InputPreferences>
-  <gs:SystemLocale Name="es-ES"/>
-  <gs:GeoID Value="195"/>
-  <gs:LocationPreferences>
-    <gs:GeoID Value="195"/>
-  </gs:LocationPreferences>
-</gs:GlobalizationServices>
-"@
-Set-Content -Path "$env:TEMP\es-ES.xml" -Value $xml -Encoding UTF8
-& "$env:SystemRoot\System32\control.exe" "intl.cpl,,/f:`"$env:TEMP\es-ES.xml`""
 
 # --------- WINDOWS UPDATE OPCIONES AVANZADAS ---------
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings" -Name "IsContinuousInnovationOptedIn" -Value 1 -Type DWord
@@ -71,7 +26,7 @@ try {
 
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings" -Name "RestartForFeatureUpdatesEnabled" -Value 1 -Type DWord
 
-# --------- INSTALACIÓN DE SOFTWARE BÁSICO (usando MSI/EXE, sin Teams) ---------
+# --------- INSTALACIÓN DE SOFTWARE BÁSICO (Notepad++ y 7-Zip) ---------
 # Instala 7-Zip
 Invoke-WebRequest -Uri "https://www.7-zip.org/a/7z2301-x64.exe" -OutFile "$env:TEMP\7z.exe"
 Start-Process "$env:TEMP\7z.exe" -ArgumentList "/S" -Wait
@@ -79,26 +34,6 @@ Start-Process "$env:TEMP\7z.exe" -ArgumentList "/S" -Wait
 # Instala Notepad++
 Invoke-WebRequest -Uri "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.8/npp.8.6.8.Installer.x64.exe" -OutFile "$env:TEMP\npp.exe"
 Start-Process "$env:TEMP\npp.exe" -ArgumentList "/S" -Wait
-
-# --------- MODO OSCURO PARA TODOS LOS USUARIOS ---------
-# Usuario actual
-New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -PropertyType DWord -Value 0 -Force
-New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "SystemUsesLightTheme" -PropertyType DWord -Value 0 -Force
-# Todos los usuarios existentes
-$users = Get-ChildItem 'HKU:' | Where-Object { $_.Name -match '^HKEY_USERS\\S-' }
-foreach ($user in $users) {
-    try {
-        $regPath = "$($user.PSPath)\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
-        if (-not (Test-Path $regPath)) { New-Item -Path $regPath -Force | Out-Null }
-        New-ItemProperty -Path $regPath -Name "AppsUseLightTheme" -PropertyType DWord -Value 0 -Force
-        New-ItemProperty -Path $regPath -Name "SystemUsesLightTheme" -PropertyType DWord -Value 0 -Force
-    } catch { }
-}
-# Para nuevos usuarios (Default User)
-$defaultUserKey = "Registry::HKEY_USERS\.DEFAULT\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
-if (-not (Test-Path $defaultUserKey)) { New-Item -Path $defaultUserKey -Force | Out-Null }
-New-ItemProperty -Path $defaultUserKey -Name "AppsUseLightTheme" -PropertyType DWord -Value 0 -Force
-New-ItemProperty -Path $defaultUserKey -Name "SystemUsesLightTheme" -PropertyType DWord -Value 0 -Force
 
 # --------- LIMPIEZA DE TEMPORALES Y LOGS ---------
 Remove-Item -Path "C:\Windows\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
