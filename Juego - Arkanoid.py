@@ -166,13 +166,6 @@ def stop_paddle():
 def exit_game():
     wn.bye()
 
-wn.listen()
-wn.onkeypress(move_left, "Left")
-wn.onkeyrelease(stop_paddle, "Left")
-wn.onkeypress(move_right, "Right")
-wn.onkeyrelease(stop_paddle, "Right")
-wn.onkeypress(exit_game, "q")
-
 # --- BOLA ---
 ball = turtle.Turtle()
 ball.shape("circle")
@@ -187,9 +180,7 @@ ball.breakthru = False
 
 multi_ball = None
 
-# --- BLOQUES ---
-blocks = []
-
+# --- PATRONES DE NIVELES ---
 def pyramid_pattern():
     rows, cols = BLOCK_ROWS, BLOCK_COLS
     pattern = []
@@ -257,12 +248,119 @@ def full_pattern():
         pattern.append([1]*cols)
     return pattern
 
-PATTERN_LIST = [pyramid_pattern, inverse_pyramid_pattern, frame_pattern, checker_pattern, saw_pattern, full_pattern]
+def stair_pattern():
+    # Escalera ascendente
+    rows, cols = BLOCK_ROWS, BLOCK_COLS
+    pattern = []
+    for r in range(rows):
+        row = [0]*cols
+        for c in range(r, cols):
+            row[c] = 1
+        pattern.append(row)
+    return pattern
+
+def v_pattern():
+    # V invertida
+    rows, cols = BLOCK_ROWS, BLOCK_COLS
+    pattern = []
+    mid = cols // 2
+    for r in range(rows):
+        row = [0]*cols
+        left = max(0, mid-r)
+        right = min(cols, mid+r+1)
+        for c in range(left, right):
+            row[c] = 1
+        pattern.append(row)
+    return pattern
+
+def grid_pattern():
+    # Cuadrícula tipo tablero de ajedrez más densa
+    rows, cols = BLOCK_ROWS, BLOCK_COLS
+    pattern = []
+    for r in range(rows):
+        row = []
+        for c in range(cols):
+            if (r % 2 == 0) or (c % 2 == 0):
+                row.append(1)
+            else:
+                row.append(0)
+        pattern.append(row)
+    return pattern
+
+def honeycomb_pattern():
+    # Simulación de hexágonos
+    rows, cols = BLOCK_ROWS, BLOCK_COLS
+    pattern = []
+    for r in range(rows):
+        row = []
+        for c in range(cols):
+            if (r % 2 == 0 and c % 3 != 2) or (r % 2 == 1 and c % 3 != 0):
+                row.append(1)
+            else:
+                row.append(0)
+        pattern.append(row)
+    return pattern
+
+def diamond_pattern():
+    # Rombo centrado
+    rows, cols = BLOCK_ROWS, BLOCK_COLS
+    mid = cols // 2
+    pattern = []
+    for r in range(rows):
+        row = [0]*cols
+        start = max(0, mid - r)
+        end = min(cols, mid + r + 1)
+        if r > mid:
+            start = max(0, r - mid)
+            end = min(cols, cols - (r - mid))
+        for c in range(start, end):
+            row[c] = 1
+        pattern.append(row)
+    return pattern
+
+def triple_band_pattern():
+    # Tres franjas horizontales
+    rows, cols = BLOCK_ROWS, BLOCK_COLS
+    pattern = []
+    for r in range(rows):
+        row = [0]*cols
+        if r in [0, rows//2, rows-1]:
+            row = [1]*cols
+        pattern.append(row)
+    return pattern
+
+def arrow_pattern():
+    # Flecha apuntando abajo
+    rows, cols = BLOCK_ROWS, BLOCK_COLS
+    pattern = []
+    mid = cols // 2
+    for r in range(rows):
+        row = [0]*cols
+        if r < rows // 2:
+            for c in range(mid - r, mid + r + 1):
+                if 0 <= c < cols:
+                    row[c] = 1
+        else:
+            row[mid] = 1
+        pattern.append(row)
+    return pattern
+
+# --- ACTUALIZA TU LISTA DE PATRONES ---
+PATTERN_LIST = [
+    pyramid_pattern, inverse_pyramid_pattern, frame_pattern,
+    checker_pattern, saw_pattern, full_pattern,
+    stair_pattern, v_pattern, grid_pattern,
+    honeycomb_pattern, diamond_pattern,
+    triple_band_pattern, arrow_pattern
+]
+
+# --- BLOQUES ---
+blocks = []
 
 def setup_blocks(randomize=True):
     global blocks
     blocks = []
-    # Elige un patrón
+    # Elige patrón de nivel
     if randomize:
         pattern = random.choice(PATTERN_LIST)()
     else:
@@ -270,6 +368,16 @@ def setup_blocks(randomize=True):
     rows = len(pattern)
     cols = len(pattern[0])
     start_x = -cols//2 * BLOCK_W + BLOCK_W//2
+    y = BLOCK_START_Y
+    # --- Elegimos aleatoriamente qué bloques tendrán power-up ---
+    block_positions = []
+    for r, row in enumerate(pattern):
+        for c, present in enumerate(row):
+            if present:
+                block_positions.append((r, c))
+    n_powerups = random.randint(0, min(4, len(block_positions)))
+    powerup_blocks = set(random.sample(block_positions, n_powerups)) if block_positions and n_powerups > 0 else set()
+    # Ahora creamos los bloques
     y = BLOCK_START_Y
     for r, row in enumerate(pattern):
         color = BLOCK_COLORS[r % len(BLOCK_COLORS)]
@@ -282,44 +390,64 @@ def setup_blocks(randomize=True):
             block.penup()
             x = start_x + c*BLOCK_W
             block.goto(x, y)
-            block.has_powerup = random.random() < 0.36
-            block.powerup_type = random.choices(
-                list(POWERUP_COLORS.keys()),
-                weights=[9,9,5,5,5,3,2,2,2,3], k=1)[0] if block.has_powerup else None
+            if (r, c) in powerup_blocks:
+                block.has_powerup = True
+                block.powerup_type = random.choices(
+                    list(POWERUP_COLORS.keys()),
+                    weights=[9,9,5,5,5,3,2,2,2,3], k=1
+                )[0]
+            else:
+                block.has_powerup = False
+                block.powerup_type = None
             blocks.append(block)
         y -= BLOCK_H + 4
 
 setup_blocks(randomize=False)
 
-# --- POWERUPS ---
+# --- POWERUPS COMO LETRAS ---
 powerups = []
-active_powerup = None
-powerup_timer = None
-active_effects = {}
+
+class Powerup:
+    def __init__(self, x, y, ptype):
+        self.turtle = turtle.Turtle(visible=False)
+        self.turtle.penup()
+        self.turtle.goto(x, y)
+        self.ptype = ptype
+        self.active = True
+        self.color = POWERUP_COLORS[ptype]
+        self.label = POWERUP_LABELS[ptype]
+        self.turtle.hideturtle()
+        self.y = y
+        self.x = x
+
+    def fall(self):
+        if not self.active:
+            return
+        self.y -= 7
+        self.turtle.clear()
+        self.turtle.goto(self.x, self.y)
+        self.turtle.color(self.color)
+        self.turtle.write(self.label, align="center", font=("Arial", 26, "bold"))
+
+    def remove(self):
+        self.active = False
+        self.turtle.clear()
+        self.turtle.hideturtle()
+
+    def xcor(self):
+        return self.x
+    def ycor(self):
+        return self.y
 
 def spawn_powerup(x, y, ptype):
-    powerup = turtle.Turtle()
-    powerup.shape("circle")
-    powerup.shapesize(stretch_wid=1.1, stretch_len=1.1)
-    powerup.color(POWERUP_COLORS[ptype])
-    powerup.penup()
-    powerup.goto(x, y)
-    powerup.ptype = ptype
-    powerup.label = POWERUP_LABELS[ptype]
-    powerup.active = True
-    # Etiqueta
-    txt = turtle.Turtle()
-    txt.hideturtle()
-    txt.penup()
-    txt.goto(x, y-5)
-    txt.color("black")
-    txt.write(powerup.label, align="center", font=("Arial", 13, "bold"))
-    powerup.label_turtle = txt
+    powerup = Powerup(x, y, ptype)
     powerups.append(powerup)
 
+active_effects = {}
+powerup_timer = None
+
 def activate_powerup(ptype):
-    global active_powerup, powerup_timer, lives, controls_reversed, multi_ball
-    # Si es instantáneo
+    global lives, controls_reversed, multi_ball
     if ptype == "X":
         if lives < LIVES_MAX:
             lives += 1
@@ -336,9 +464,8 @@ def activate_powerup(ptype):
         wn.ontimer(lambda: [clear_message(), lose_life()], 800)
         return
 
-    # Efecto temporal
     if ptype in active_effects:
-        return  # No se acumula
+        return
     active_effects[ptype] = True
 
     def end_effect():
@@ -396,7 +523,7 @@ def activate_powerup(ptype):
         return
 
     wn.update()
-    powerup_timer = wn.ontimer(end_effect, 7000)  # 7 segundos
+    powerup_timer = wn.ontimer(end_effect, 7000)
 
 def spawn_multi_ball():
     global multi_ball
@@ -496,9 +623,10 @@ def ball_block_collision(b):
         if block.distance(b) < (BLOCK_W//2 + BALL_SIZE//2 - 6):
             if not (hasattr(b, "breakthru") and b.breakthru):
                 b.dy *= -1
-            block.goto(2000, 2000)
+            bx, by = block.xcor(), block.ycor()
             if hasattr(block, "has_powerup") and block.has_powerup and block.powerup_type:
-                spawn_powerup(block.xcor(), block.ycor(), block.powerup_type)
+                spawn_powerup(bx, by, block.powerup_type)
+            block.goto(2000, 2000)
             blocks.remove(block)
             score += 10
             update_score()
@@ -555,47 +683,77 @@ def game_loop():
     # --- Powerups en movimiento y recogida ---
     for powerup in powerups[:]:
         if not powerup.active: continue
-        powerup.sety(powerup.ycor() - 7)
-        powerup.label_turtle.goto(powerup.xcor(), powerup.ycor()-5)
+        powerup.fall()
         # Recogido
         if (abs(powerup.xcor()-paddle.xcor()) < paddle.cur_width//2+15 and
-            abs(powerup.ycor()-paddle.ycor()) < PADDLE_H//2+15):
+            abs(powerup.ycor()-paddle.ycor()) < PADDLE_H//2+18):
             activate_powerup(powerup.ptype)
-            powerup.active = False
-            powerup.hideturtle()
-            powerup.label_turtle.clear()
+            powerup.remove()
             powerups.remove(powerup)
         # Fuera de pantalla
         elif powerup.ycor() < -HEIGHT//2:
-            powerup.active = False
-            powerup.hideturtle()
-            powerup.label_turtle.clear()
+            powerup.remove()
             powerups.remove(powerup)
 
     wn.update()
     wn.ontimer(game_loop, 15)
 
-# --- MENSAJE DE BIENVENIDA CRT ---
+# --- MENSAJE DE BIENVENIDA CON CARTEL NEGRO DELANTE ---
+welcome_box = turtle.Turtle()
+welcome_box.hideturtle()
+welcome_box.penup()
+welcome_box.speed(0)
+welcome_box.color("black")
+welcome_box.goto(-340, 120)
+welcome_box.pendown()
+welcome_box.begin_fill()
+for _ in range(2):
+    welcome_box.forward(680)
+    welcome_box.right(90)
+    welcome_box.forward(240)
+    welcome_box.right(90)
+welcome_box.end_fill()
+welcome_box.penup()
+
 welcome_pen = turtle.Turtle()
 welcome_pen.hideturtle()
 welcome_pen.penup()
+welcome_pen.speed(0)
 welcome_pen.color(CRT_CYAN)
-welcome_pen.goto(0, HEIGHT//2 - 140)
-welcome_pen.write(
-    "A R K A N O I D   CRT\n\n← y → para mover\nQ para salir\nRecoge los power-ups!\n\nPulsa ESPACIO para empezar",
-    align="center", font=("Courier", 24, "bold"))
+welcome_pen.goto(0, 90)
+welcome_pen.write("A R K A N O I D   CRT", align="center", font=("Courier", 32, "bold"))
+welcome_pen.goto(0, 35)
+welcome_pen.write("← y → para mover    Q para salir", align="center", font=("Courier", 22, "bold"))
+welcome_pen.goto(0, -10)
+welcome_pen.write("Recoge los power-ups!", align="center", font=("Courier", 22, "bold"))
+welcome_pen.goto(0, -65)
+welcome_pen.color(CRT_YELLOW)
+welcome_pen.write("Pulsa cualquier tecla para empezar", align="center", font=("Courier", 20, "bold"))
 
+# --- Función para iniciar el juego ---
 def start_game_from_welcome():
+    welcome_box.clear()
     welcome_pen.clear()
     clear_message()
     update_score()
+    # --- Activar los controles del juego ---
+    wn.onkeypress(move_left, "Left")
+    wn.onkeyrelease(stop_paddle, "Left")
+    wn.onkeypress(move_right, "Right")
+    wn.onkeyrelease(stop_paddle, "Right")
+    wn.onkeypress(exit_game, "q")
+    wn.listen()
     game_loop()
 
-def launch_on_key(*_):
-    wn.onkeypress(None, "space")
+def launch_on_any_key(*_):
+    for key in ["space", "Left", "Right", "q", "a", "s", "d", "w", "Return", "Up", "Down"]:
+        wn.onkeypress(None, key)
+        wn.onkeyrelease(None, key)
     start_game_from_welcome()
 
-wn.onkeypress(launch_on_key, "space")
+for key in ["space", "Left", "Right", "q", "a", "s", "d", "w", "Return", "Up", "Down"]:
+    wn.onkeypress(launch_on_any_key, key)
+    wn.onkeyrelease(launch_on_any_key, key)
 wn.listen()
 wn.update()
 wn.mainloop()
