@@ -30,7 +30,7 @@
 
 .EXAMPLE
     # Mostrar todos los buzones en tabla interactiva:
-    .\Exchange-Gathering.ps1
+    ".\Exchange - Gathering.ps1"
 
     # Mostrar solo el buzón de usuario concreto:
     .\Exchange-Gathering.ps1 -User usuario@dominio.com
