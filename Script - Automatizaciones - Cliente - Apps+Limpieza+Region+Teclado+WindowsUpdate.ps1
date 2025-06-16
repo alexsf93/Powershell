@@ -1,5 +1,5 @@
 # ============================
-# Automatismos.ps1
+# Script - Automatizaciones - ClienteW11.ps1
 # Configuración VM Windows 11 (teclado ES, horario Madrid, apps y limpieza)
 # ============================
 
