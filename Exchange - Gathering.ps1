@@ -33,7 +33,7 @@
     ".\Exchange - Gathering.ps1"
 
     # Mostrar solo el buzón de usuario concreto:
-    .\Exchange-Gathering.ps1 -User usuario@dominio.com
+    ".\Exchange - Gathering.ps1" -User usuario@dominio.com
 
 #>
 
