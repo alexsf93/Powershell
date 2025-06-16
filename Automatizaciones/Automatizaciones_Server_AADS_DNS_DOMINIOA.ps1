@@ -1,6 +1,6 @@
 <#
 ================================================================================
- Script:        Script - Automatizaciones - Server - AADS_DNS_DOMINIOA
+ Script:        Automatizaciones_Server_AADS_DNS_DOMINIOA
  Descripción:   Instalación 100% desatendida de los roles ADDS y DNS,
                 y creación automática del dominio DominioA.local.
 ================================================================================

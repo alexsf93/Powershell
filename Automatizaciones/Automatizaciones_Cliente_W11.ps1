@@ -1,6 +1,6 @@
 <#
 ================================================================================
- Script:        Script - Automatizaciones - Cliente - W11.ps1
+ Script:        Automatizaciones_Cliente_W11.ps1
  Descripción:   Configuración automática de VM Windows 11:
                 - Región, zona horaria y teclado español (ES)
                 - Instalación de software básico
