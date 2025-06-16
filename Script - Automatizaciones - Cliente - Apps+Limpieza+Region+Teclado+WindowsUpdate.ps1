@@ -1,7 +1,40 @@
-# ============================
-# Script - Automatizaciones - ClienteW11.ps1
-# Configuración VM Windows 11 (teclado ES, horario Madrid, apps y limpieza)
-# ============================
+<#
+================================================================================
+ Script:        Script - Automatizaciones - Cliente - Apps+Limpieza+Region+Teclado+WindowsUpdate.ps1
+ Descripción:   Configuración automática de VM Windows 11:
+                - Región, zona horaria y teclado español (ES)
+                - Instalación de software básico
+                - Limpieza del sistema y eliminación de bloatware
+                - Configuración de Windows Update y Storage Sense
+================================================================================
+
+ Funcionalidad:
+   - Configura la zona horaria a Madrid (Romance Standard Time).
+   - Establece el teclado y la interfaz en español (España).
+   - Optimiza opciones avanzadas de Windows Update.
+   - Instala software esencial (Notepad++ y 7-Zip) de forma silenciosa.
+   - Elimina archivos temporales, logs y ejecuta limpieza del sistema.
+   - Habilita Storage Sense (limpieza automática de disco).
+   - Desinstala aplicaciones preinstaladas no deseadas (bloatware).
+   - Desactiva servicios innecesarios (ejemplo: Xbox Game Bar).
+   - Reinicia automáticamente el equipo al finalizar.
+
+ Parámetros personalizables:
+   - Lista de aplicaciones a eliminar (`$unwantedApps`).
+   - Rutas de software o versiones si quieres cambiar instaladores.
+
+ Uso:
+   1. Revisa y modifica la lista de aplicaciones a eliminar si lo deseas.
+   2. Ejecuta el script como **Administrador** en la máquina Windows 11.
+   3. El sistema se configurará y reiniciará automáticamente al terminar.
+
+ Notas:
+   - La ejecución requiere privilegios de administrador.
+   - El script modifica el sistema, recomienda probar primero en entornos controlados.
+
+================================================================================
+#>
+
 
 # --------- ZONA HORARIA (Madrid) ---------
 Set-TimeZone -Id "Romance Standard Time"
