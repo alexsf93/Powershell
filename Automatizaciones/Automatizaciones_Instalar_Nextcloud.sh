@@ -1,7 +1,10 @@
 #!/bin/bash
+# Automatizaciones_Instalar_Nextcloud.sh
 # Uso: bash Automatizaciones_Instalar_Nextcloud.sh <MYSQL_ROOT_PASS> <NC_DB> <NC_DB_USER> <NC_DB_PASS> <SITE_URL> <NC_ADMIN> <NC_ADMIN_PASS>
 
-set -euo pipefail
+set -euxo pipefail
+exec > >(tee /tmp/nextcloud_install_stdout.log)
+exec 2> >(tee /tmp/nextcloud_install_stderr.log >&2)
 
 MYSQL_ROOT_PASS="${1:-changeme_rootpass}"
 NC_DB="${2:-nextcloud_db}"
@@ -13,34 +16,46 @@ NC_ADMIN_PASS="${7:-NcAdminPassw0rd!}"
 
 export DEBIAN_FRONTEND=noninteractive
 
-# Instala LAMP stack y dependencias para Nextcloud
+echo "---- Instalando LAMP y dependencias para Nextcloud ----"
 apt-get update -y
 apt-get upgrade -y
-apt-get install -y apache2 php php-mysql php-gd php-curl php-xml php-zip php-mbstring php-intl php-bcmath php-gmp php-imagick libapache2-mod-php mysql-server unzip wget curl
+apt-get install -y apache2 mariadb-server \
+ php php-mysql php-gd php-curl php-xml php-zip php-mbstring php-intl php-bcmath php-gmp php-imagick libapache2-mod-php wget unzip curl
 
-# Configura MySQL
-mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${MYSQL_ROOT_PASS}'; FLUSH PRIVILEGES;"
-mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE DATABASE IF NOT EXISTS ${NC_DB} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
-mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE USER IF NOT EXISTS '${NC_DB_USER}'@'localhost' IDENTIFIED BY '${NC_DB_PASS}';"
-mysql -u root -p"${MYSQL_ROOT_PASS}" -e "GRANT ALL PRIVILEGES ON ${NC_DB}.* TO '${NC_DB_USER}'@'localhost'; FLUSH PRIVILEGES;"
+echo "---- Configurando MariaDB/MySQL ----"
+service mysql start
+mysql -u root <<EOF
+ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQL_ROOT_PASS}';
+FLUSH PRIVILEGES;
+CREATE DATABASE IF NOT EXISTS ${NC_DB} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE USER IF NOT EXISTS '${NC_DB_USER}'@'localhost' IDENTIFIED BY '${NC_DB_PASS}';
+GRANT ALL PRIVILEGES ON ${NC_DB}.* TO '${NC_DB_USER}'@'localhost';
+FLUSH PRIVILEGES;
+EOF
 
-# Instala Nextcloud (última versión)
+echo "---- Descargando y preparando Nextcloud ----"
 cd /tmp
-NEXTCLOUD_VERSION=$(curl -s https://nextcloud.com/changelog/ | grep -Eo "Nextcloud [0-9]+\.[0-9]+\.[0-9]+" | head -n1 | awk '{print $2}')
-wget -q "https://download.nextcloud.com/server/releases/nextcloud-${NEXTCLOUD_VERSION}.zip" || wget -q "https://download.nextcloud.com/server/releases/latest.zip"
-unzip -oq nextcloud-*.zip
-rm -rf /var/www/html/*
+wget -q https://download.nextcloud.com/server/releases/latest.zip
+unzip -oq latest.zip
+
+# Limpia y recrea /var/www/html para Nextcloud
+if [ -d /var/www/html ]; then
+    rm -rf /var/www/html/*
+else
+    mkdir -p /var/www/html
+fi
+
 cp -r nextcloud/* /var/www/html/
 chown -R www-data:www-data /var/www/html/
 chmod -R 755 /var/www/html/
 
-# Habilita módulos necesarios de Apache
+echo "---- Habilitando módulos necesarios de Apache ----"
 a2enmod rewrite headers env dir mime setenvif ssl
 
-# Reinicia Apache para cargar módulos
+echo "---- Reiniciando Apache ----"
 systemctl restart apache2
 
-# Instala OCC: usa el propio binario php de la VM
+echo "---- Instalando Nextcloud en modo headless ----"
 sudo -u www-data php /var/www/html/occ maintenance:install \
   --database "mysql" \
   --database-name "${NC_DB}" \
@@ -50,14 +65,22 @@ sudo -u www-data php /var/www/html/occ maintenance:install \
   --admin-pass "${NC_ADMIN_PASS}" \
   --data-dir "/var/www/html/data"
 
-# Ajusta la URL de confianza para la instancia
-sudo -u www-data php /var/www/html/occ config:system:set trusted_domains 1 --value="${SITE_URL#http://}"
+# Ajustar trusted domain
+DOMAIN=$(echo "$SITE_URL" | sed 's|http[s]*://||;s|/.*$||')
+sudo -u www-data php /var/www/html/occ config:system:set trusted_domains 1 --value="$DOMAIN"
 
-# (Opcional) Sube el límite de tamaño de archivo para subida
-sed -i 's/post_max_size = .*/post_max_size = 2048M/' /etc/php/*/apache2/php.ini
-sed -i 's/upload_max_filesize = .*/upload_max_filesize = 2048M/' /etc/php/*/apache2/php.ini
-
+# (Opcional) Ajusta el tamaño máximo de archivos a 2GB
+PHP_INI=$(php --ini | grep "Loaded Configuration" | awk '{print $4}')
+sed -i 's/post_max_size = .*/post_max_size = 2048M/' $PHP_INI
+sed -i 's/upload_max_filesize = .*/upload_max_filesize = 2048M/' $PHP_INI
 systemctl reload apache2
 
+echo "---- Estado de servicios ----"
+systemctl status apache2 --no-pager || true
+systemctl status mysql --no-pager || systemctl status mariadb --no-pager || true
+php -v || true
+echo "-----------------------------"
+
+echo
 echo "Nextcloud instalado correctamente en ${SITE_URL}"
 echo "Accede con usuario: ${NC_ADMIN} y contraseña: ${NC_ADMIN_PASS}"
