@@ -1,6 +1,5 @@
 #!/bin/bash
-# Automatización instalación Zabbix 6.4 en Ubuntu Server 24.04
-# Uso: bash Automatizaciones_Instalar_Zabbix.sh <MYSQL_ROOT_PASS> <ZBX_DB_PASS>
+# Instalador Zabbix 6.4 para Ubuntu 24.04 headless
 
 set -euo pipefail
 
@@ -12,28 +11,25 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get install -y wget curl gnupg2 lsb-release apache2 mysql-server
 
-# Repositorio Zabbix
+# Añadir el repositorio oficial de Zabbix
 wget https://repo.zabbix.com/zabbix/6.4/ubuntu/pool/main/z/zabbix-release/zabbix-release_6.4-1+ubuntu24.04_all.deb
 dpkg -i zabbix-release_6.4-1+ubuntu24.04_all.deb
 apt-get update -y
 apt-get install -y zabbix-server-mysql zabbix-frontend-php zabbix-apache-conf zabbix-agent
 
-# MySQL: configura root y crea la base de datos de Zabbix
+# Configura MySQL root y prepara base de datos para Zabbix
 mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${MYSQL_ROOT_PASS}'; FLUSH PRIVILEGES;"
 mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE DATABASE IF NOT EXISTS zabbix character set utf8mb4 collate utf8mb4_bin;"
 mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE USER IF NOT EXISTS 'zabbix'@'localhost' IDENTIFIED BY '${ZBX_DB_PASS}';"
 mysql -u root -p"${MYSQL_ROOT_PASS}" -e "GRANT ALL PRIVILEGES ON zabbix.* TO 'zabbix'@'localhost'; FLUSH PRIVILEGES;"
 
-# SOLO IMPORTAR schema.sql
-TMP_SQL=/tmp/zabbix_schema.sql
-curl -fsSL https://raw.githubusercontent.com/zabbix/zabbix/release/6.4/database/mysql/schema.sql > $TMP_SQL
-mysql -u root -p"${MYSQL_ROOT_PASS}" zabbix < $TMP_SQL
-rm -f $TMP_SQL
+# IMPORTA SOLO SCHEMA.SQL (ya no existe ni images ni data en Zabbix 6.4)
+zcat /usr/share/doc/zabbix-server-mysql*/create.sql.gz | mysql -u root -p"${MYSQL_ROOT_PASS}" zabbix
 
-# Configura contraseña en zabbix_server.conf
+# Configura password de la DB en zabbix_server.conf
 sed -i "s/# DBPassword=/DBPassword=${ZBX_DB_PASS}/" /etc/zabbix/zabbix_server.conf
 
-# Activa y arranca servicios
+# Arranca y habilita servicios
 systemctl restart zabbix-server zabbix-agent apache2
 systemctl enable zabbix-server zabbix-agent apache2
 
