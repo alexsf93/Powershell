@@ -10,7 +10,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 # Instala dependencias y repositorio Zabbix
 apt-get update -y
-apt-get install -y wget gnupg2 lsb-release apache2 mysql-server
+apt-get install -y wget curl gnupg2 lsb-release apache2 mysql-server
 
 wget https://repo.zabbix.com/zabbix/6.4/ubuntu/pool/main/z/zabbix-release/zabbix-release_6.4-1+ubuntu24.04_all.deb
 dpkg -i zabbix-release_6.4-1+ubuntu24.04_all.deb
@@ -23,19 +23,18 @@ mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE DATABASE IF NOT EXISTS zabbix ch
 mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE USER IF NOT EXISTS 'zabbix'@'localhost' IDENTIFIED BY '${ZBX_DB_PASS}';"
 mysql -u root -p"${MYSQL_ROOT_PASS}" -e "GRANT ALL PRIVILEGES ON zabbix.* TO 'zabbix'@'localhost'; FLUSH PRIVILEGES;"
 
-# Buscar el SQL de inicialización dondequiera que esté
-SQL_PATH=$(find /usr/share/doc -name create.sql.gz | head -n 1)
-if [ -f "$SQL_PATH" ]; then
-  zcat "$SQL_PATH" | mysql -u root -p"${MYSQL_ROOT_PASS}" zabbix
-else
-  echo "ERROR: No se encontró create.sql.gz de Zabbix para crear la base de datos." >&2
-  exit 1
-fi
+# 🔥 DESCARGAR EL SQL DE GITHUB Y EJECUTARLO 🔥
+TMP_SQL=/tmp/zabbix_server.sql
+curl -fsSL https://raw.githubusercontent.com/zabbix/zabbix/6.4.0/database/mysql/schema.sql > $TMP_SQL
+curl -fsSL https://raw.githubusercontent.com/zabbix/zabbix/6.4.0/database/mysql/images.sql >> $TMP_SQL
+curl -fsSL https://raw.githubusercontent.com/zabbix/zabbix/6.4.0/database/mysql/data.sql >> $TMP_SQL
+
+mysql -u root -p"${MYSQL_ROOT_PASS}" zabbix < $TMP_SQL
+rm -f $TMP_SQL
 
 # Configura zabbix_server.conf con la contraseña
 sed -i "s/# DBPassword=/DBPassword=${ZBX_DB_PASS}/" /etc/zabbix/zabbix_server.conf
 
-# Inicia y habilita servicios
 systemctl restart zabbix-server zabbix-agent apache2
 systemctl enable zabbix-server zabbix-agent apache2
 
