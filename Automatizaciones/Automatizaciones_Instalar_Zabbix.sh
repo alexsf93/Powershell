@@ -23,8 +23,15 @@ mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE DATABASE IF NOT EXISTS zabbix ch
 mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE USER IF NOT EXISTS 'zabbix'@'localhost' IDENTIFIED BY '${ZBX_DB_PASS}';"
 mysql -u root -p"${MYSQL_ROOT_PASS}" -e "GRANT ALL PRIVILEGES ON zabbix.* TO 'zabbix'@'localhost'; FLUSH PRIVILEGES;"
 
-# IMPORTA SOLO SCHEMA.SQL (ya no existe ni images ni data en Zabbix 6.4)
-zcat /usr/share/doc/zabbix-server-mysql*/create.sql.gz | mysql -u root -p"${MYSQL_ROOT_PASS}" zabbix
+# IMPORTA SOLO EL SCHEMA.SQL (verifica la ruta compatible con Ubuntu 24.04 y Zabbix 6.4)
+if [ -f /usr/share/zabbix-sql-scripts/mysql/server.sql.gz ]; then
+    zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | mysql -u root -p"${MYSQL_ROOT_PASS}" zabbix
+elif [ -f /usr/share/doc/zabbix-sql-scripts/mysql/server.sql.gz ]; then
+    zcat /usr/share/doc/zabbix-sql-scripts/mysql/server.sql.gz | mysql -u root -p"${MYSQL_ROOT_PASS}" zabbix
+else
+    echo "ERROR: No se encontró el script de base de datos de Zabbix. Instalación detenida."
+    exit 22
+fi
 
 # Configura password de la DB en zabbix_server.conf
 sed -i "s/# DBPassword=/DBPassword=${ZBX_DB_PASS}/" /etc/zabbix/zabbix_server.conf
