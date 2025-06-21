@@ -22,11 +22,20 @@ mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY
 mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE DATABASE IF NOT EXISTS zabbix character set utf8mb4 collate utf8mb4_bin;"
 mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE USER IF NOT EXISTS 'zabbix'@'localhost' IDENTIFIED BY '${ZBX_DB_PASS}';"
 mysql -u root -p"${MYSQL_ROOT_PASS}" -e "GRANT ALL PRIVILEGES ON zabbix.* TO 'zabbix'@'localhost'; FLUSH PRIVILEGES;"
-zcat /usr/share/doc/zabbix-server-mysql*/create.sql.gz | mysql -u root -p"${MYSQL_ROOT_PASS}" zabbix
 
-# Configura zabbix_server.conf
+# Buscar el SQL de inicialización dondequiera que esté
+SQL_PATH=$(find /usr/share/doc -name create.sql.gz | head -n 1)
+if [ -f "$SQL_PATH" ]; then
+  zcat "$SQL_PATH" | mysql -u root -p"${MYSQL_ROOT_PASS}" zabbix
+else
+  echo "ERROR: No se encontró create.sql.gz de Zabbix para crear la base de datos." >&2
+  exit 1
+fi
+
+# Configura zabbix_server.conf con la contraseña
 sed -i "s/# DBPassword=/DBPassword=${ZBX_DB_PASS}/" /etc/zabbix/zabbix_server.conf
 
+# Inicia y habilita servicios
 systemctl restart zabbix-server zabbix-agent apache2
 systemctl enable zabbix-server zabbix-agent apache2
 
