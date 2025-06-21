@@ -23,11 +23,11 @@ mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE DATABASE IF NOT EXISTS zabbix ch
 mysql -u root -p"${MYSQL_ROOT_PASS}" -e "CREATE USER IF NOT EXISTS 'zabbix'@'localhost' IDENTIFIED BY '${ZBX_DB_PASS}';"
 mysql -u root -p"${MYSQL_ROOT_PASS}" -e "GRANT ALL PRIVILEGES ON zabbix.* TO 'zabbix'@'localhost'; FLUSH PRIVILEGES;"
 
-# 🔥 DESCARGAR EL SQL DE GITHUB Y EJECUTARLO 🔥
+# DESCARGA los SQL desde la rama correcta release/6.4
 TMP_SQL=/tmp/zabbix_server.sql
-curl -fsSL https://raw.githubusercontent.com/zabbix/zabbix/6.4.0/database/mysql/schema.sql > $TMP_SQL
-curl -fsSL https://raw.githubusercontent.com/zabbix/zabbix/6.4.0/database/mysql/images.sql >> $TMP_SQL
-curl -fsSL https://raw.githubusercontent.com/zabbix/zabbix/6.4.0/database/mysql/data.sql >> $TMP_SQL
+curl -fsSL https://raw.githubusercontent.com/zabbix/zabbix/release/6.4/database/mysql/schema.sql > $TMP_SQL
+curl -fsSL https://raw.githubusercontent.com/zabbix/zabbix/release/6.4/database/mysql/images.sql >> $TMP_SQL
+curl -fsSL https://raw.githubusercontent.com/zabbix/zabbix/release/6.4/database/mysql/data.sql >> $TMP_SQL
 
 mysql -u root -p"${MYSQL_ROOT_PASS}" zabbix < $TMP_SQL
 rm -f $TMP_SQL
