@@ -32,7 +32,7 @@ if ! id "nagios" &>/dev/null; then useradd nagios; fi
 if ! grep -q nagios /etc/group; then groupadd nagios; fi
 usermod -a -G nagios www-data
 
-NAGIOS_VERSION="4.5.2"
+NAGIOS_VERSION="4.5.9"
 cd /tmp
 echo -e "${CYAN}Descargando Nagios Core $NAGIOS_VERSION...${NC}"
 wget -q https://github.com/NagiosEnterprises/nagioscore/releases/download/nagios-$NAGIOS_VERSION/nagios-$NAGIOS_VERSION.tar.gz
@@ -69,7 +69,7 @@ systemctl restart apache2
 systemctl enable nagios
 systemctl restart nagios
 
-echo -e "\n${GREEN}${BOLD}Nagios Core instalado correctamente.${NC}"
+echo -e "\n${GREEN}${BOLD}Nagios Core $NAGIOS_VERSION instalado correctamente.${NC}"
 echo -e "${BLUE}Acceso web (sustituye <IP-DE-TU-VM> por la IP pública):${NC} ${YELLOW}http://<IP-DE-TU-VM>/nagios${NC}"
 echo -e "${BLUE}Usuario web:${NC} ${YELLOW}${NAGIOS_ADMIN}${NC}"
 echo -e "${BLUE}Contraseña web:${NC} ${YELLOW}${NAGIOS_PASS}${NC}\n"
