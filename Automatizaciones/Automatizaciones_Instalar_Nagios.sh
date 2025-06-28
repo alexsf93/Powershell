@@ -1,11 +1,40 @@
+#########################################################################################
+#   Instalador Headless de Nagios Core para Ubuntu 24.04 LTS
+#
+#   Este script automatiza la instalación de Nagios Core (v4.5.9) y plugins oficiales
+#   en servidores Ubuntu 24.04 LTS. Permite definir usuario y contraseña admin vía
+#   parámetros, y deja el acceso web listo tras finalizar.
+#
+#   -----------------------------------------------------------------------------
+#
+#   Características:
+#   - Instalación totalmente desatendida de Nagios Core y plugins desde fuentes oficiales.
+#   - Configuración automática del usuario web y permisos.
+#   - Habilita Apache2, CGI y deja Nagios listo para acceder por navegador.
+#   - Ideal para laboratorios, despliegues cloud, automatización y testing.
+#
+#   Requisitos:
+#   - Ubuntu Server 24.04 LTS (limpio, sin Nagios instalado).
+#   - Ejecutar como root o usando sudo.
+#   - Acceso a Internet.
+#
+#   Uso:
+#       bash Automatizaciones_Instalar_Nagios.sh [usuario] [contraseña]
+#     - [usuario]     → Usuario admin web de Nagios (por defecto: nagiosadmin)
+#     - [contraseña]  → Contraseña admin (por defecto: Nagios123!)
+#
+#   Acceso tras instalación:
+#     - Web:      http://<IP-DE-TU-VM>/nagios
+#     - Usuario:  <usuario definido>
+#     - Password: <contraseña definida>
+#
+#   Advertencia:
+#     Por seguridad, cambia la contraseña por defecto tras la primera conexión
+#     si el entorno es accesible públicamente.
+#
+#   Autor: Alejandro Suárez (@alexsf93)
+#########################################################################################
 #!/bin/bash
-
-#########################################################################################
-#   Instalador headless de Nagios Core en Ubuntu 24.04 LTS
-#   Parámetros:
-#      $1 - usuario admin Nagios (default: nagiosadmin)
-#      $2 - contraseña admin Nagios (default: Nagios123!)
-#########################################################################################
 
 set -euo pipefail
 

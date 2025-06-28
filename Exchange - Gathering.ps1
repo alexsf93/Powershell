@@ -1,40 +1,45 @@
 <#
-.SYNOPSIS
-    Informe detallado de buzones Exchange Online con tabla interactiva en PowerShell.
+===========================================================
+        Exchange Online - Informe Detallado de Buzones
+-----------------------------------------------------------
+Autor: Alejandro Suárez (@alexsf93)
+===========================================================
 
-.DESCRIPTION
-    Este script se conecta a Exchange Online y obtiene información detallada de todos los buzones de usuario del tenant, excluyendo buzones de sistema.
-    Permite buscar un buzón concreto pasando el parámetro -User (por ejemplo: -User usuario@dominio.com) o mostrar todos los buzones por defecto.
-    Muestra los datos en una tabla interactiva (Out-GridView) que permite buscar, ordenar y filtrar resultados fácilmente.
-    Por cada buzón muestra:
-      - Nombre y usuario principal (UPN)
-      - Tipo de buzón
-      - Alias secundarios (excluyendo el principal)
-      - Capacidad consumida y total asignada
-      - Porcentaje de uso del buzón
-      - Elementos almacenados y eliminados
-      - Estado de archivado (habilitado o no)
-      - Política de retención asignada
-      - Litigio (Litigation Hold)
-      - Último inicio de sesión
+.DESCRIPCIÓN
+    Este script se conecta a Exchange Online y obtiene información detallada de todos los buzones de usuario, excluyendo buzones de sistema.
+    Permite buscar un buzón concreto con -User o mostrar todos los buzones.
+    Presenta los datos en una tabla interactiva (Out-GridView) para buscar, ordenar y filtrar fácilmente.
 
-.REQUIREMENTS
+.DATOS MOSTRADOS
+    - Nombre y usuario principal (UPN)
+    - Tipo de buzón
+    - Alias secundarios (sin el principal)
+    - Capacidad consumida y total asignada
+    - Porcentaje de uso
+    - Elementos almacenados y eliminados
+    - Archivado habilitado
+    - Política de retención
+    - Litigation Hold
+    - Último inicio de sesión
+
+.REQUISITOS
     - PowerShell 7.x o Windows PowerShell 5.1
-    - Módulo ExchangeOnlineManagement instalado (se instalará automáticamente si es necesario)
-    - Permisos suficientes para consultar buzones en Exchange Online
+    - Módulo ExchangeOnlineManagement instalado (el script lo instala si falta)
+    - Permisos para consultar buzones en Exchange Online
 
-.NOTES
-    - El script excluye buzones de sistema, pero puedes ajustar el filtro de exclusión según tus necesidades.
-    - Es compatible con Out-GridView (requiere entorno gráfico).
-    - Puedes copiar y exportar desde la tabla GridView usando Shift+clic o con menú contextual.
-
-.EXAMPLE
+.EJEMPLOS DE USO
     # Mostrar todos los buzones en tabla interactiva:
-    ".\Exchange - Gathering.ps1"
+    .\Exchange-Gathering.ps1
 
-    # Mostrar solo el buzón de usuario concreto:
-    ".\Exchange - Gathering.ps1" -User usuario@dominio.com
+    # Mostrar sólo el buzón de un usuario concreto:
+    .\Exchange-Gathering.ps1 -User usuario@dominio.com
 
+.NOTAS
+    - Excluye buzones de sistema, ajusta el filtro si lo necesitas.
+    - Compatible con Out-GridView (requiere entorno gráfico).
+    - Puedes copiar/exportar desde la tabla con Shift+clic o menú contextual.
+
+===========================================================
 #>
 
 param(

@@ -1,11 +1,12 @@
 """
 ============================================================
-                     ARKANOID RETRO CRT
+                    ARKANOID RETRO CRT
 ------------------------------------------------------------
 Un remake sencillo de Arkanoid en Python usando Turtle,
 con estética visual CRT (borde verde, bloques neón, power-ups
 divertidos y niveles aleatorios y estructurados).
 ¡Rompe bloques, recoge power-ups y llega tan lejos como puedas!
+
 ------------------------------------------------------------
 ¿CÓMO JUGAR?
 - Mueve la pala con ← y → (mantén pulsadas para ir más rápido)
@@ -24,6 +25,9 @@ POWER-UPS:
 - D: Pierdes una vida    ?: Efecto aleatorio
 
 ¡Ten cuidado con los power-ups malos!
+
+------------------------------------------------------------
+Autor: Alejandro Suárez (@alexsf93)
 ============================================================
 """
 

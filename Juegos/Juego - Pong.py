@@ -34,8 +34,12 @@ REQUISITOS
 - Python 3.x
 - Librería estándar `turtle` (ya incluida en Python)
 - No requiere instalación adicional.
+
+------------------------------------------------------------
+Autor: Alejandro Suárez (@alexsf93)
 ============================================================
 """
+
 
 import turtle
 import random

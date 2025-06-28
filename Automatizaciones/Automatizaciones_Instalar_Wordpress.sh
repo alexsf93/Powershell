@@ -1,5 +1,48 @@
+#########################################################################################
+#   Instalador Headless de WordPress para Ubuntu 24.04 LTS
+#
+#   Este script automatiza la instalación de WordPress (última versión estable) sobre
+#   un stack LAMP en Ubuntu 24.04 LTS. Permite ejecución desatendida, integración en
+#   automatizaciones cloud y paso de credenciales por argumentos.
+#
+#   -----------------------------------------------------------------------------
+#
+#   Características:
+#   - Instalación y configuración totalmente desatendida de Apache, PHP, MySQL y WordPress.
+#   - Crea y configura la base de datos, usuario y credenciales iniciales.
+#   - Genera claves secretas únicas y configura todo el entorno.
+#   - Permite definir credenciales y dominio por argumentos.
+#   - Optimizado para laboratorios, despliegues cloud y pipelines CI/CD.
+#
+#   Requisitos:
+#   - Ubuntu Server 24.04 LTS limpio (sin WordPress previamente instalado).
+#   - Ejecutar como root o con sudo.
+#   - Acceso a Internet para descargar paquetes y WordPress.
+#
+#   Uso:
+#       bash Automatizaciones_Instalar_Wordpress.sh [mysql_root_pass] [wp_db] [wp_user] [wp_pass] [site_url] [wp_admin] [wp_admin_pass] [wp_admin_mail]
+#     - [mysql_root_pass]   → Contraseña root de MySQL
+#     - [wp_db]             → Nombre de base de datos para WordPress
+#     - [wp_user]           → Usuario de base de datos para WordPress
+#     - [wp_pass]           → Contraseña de base de datos para WordPress
+#     - [site_url]          → URL pública del sitio (por ejemplo, http://IP)
+#     - [wp_admin]          → Usuario administrador WordPress
+#     - [wp_admin_pass]     → Contraseña administrador WordPress
+#     - [wp_admin_mail]     → Email del administrador
+#
+#   Acceso tras instalación:
+#     - Web:      http://<IP-DE-TU-VM>/
+#     - Admin:    http://<IP-DE-TU-VM>/wp-admin
+#     - Usuario admin WP:      <wp_admin>
+#     - Contraseña admin WP:   <wp_admin_pass>
+#
+#   Advertencia:
+#     Cambia las contraseñas y parámetros por defecto si el entorno es accesible
+#     públicamente o es productivo.
+#
+#   Autor: Alejandro Suárez (@alexsf93)
+#########################################################################################
 #!/bin/bash
-# Uso: bash Automatizaciones_Instalar_Wordpress.sh <MYSQL_ROOT_PASS> <WP_DB> <WP_USER> <WP_PASS> <SITE_URL> <WP_ADMIN> <WP_ADMIN_PASS> <WP_ADMIN_MAIL>
 
 set -euo pipefail
 

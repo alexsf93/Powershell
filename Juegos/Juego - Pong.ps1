@@ -2,6 +2,8 @@
 ############################################################
 #                  PONG RETRO EN POWERSHELL                #
 #----------------------------------------------------------#
+# Autor: Alejandro Suárez (@alexsf93)                      #
+#                                                          #
 # Este script ejecuta el clásico juego Pong directamente   #
 # en la consola de Windows, con gráficos y controles retro #
 # y bordes visibles.                                      #

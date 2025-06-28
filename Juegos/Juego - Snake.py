@@ -4,8 +4,11 @@
 ===============================================
 
 Este script implementa una versión retro del clásico juego Snake usando la librería Turtle de Python,
-emulando el efecto de una pantalla CRT (colores neón y borde fosforescente). El juego tiene las siguientes características principales:
+emulando el efecto de una pantalla CRT (colores neón y borde fosforescente).
 
+------------------------------------------------
+Características principales:
+------------------------------------------------
 - Área de juego enmarcada en color verde neón.
 - Snake con cabeza brillante y cuerpo verde.
 - Fruta normal (roja) y fruta especial amarilla que otorga una vida extra.
@@ -15,20 +18,29 @@ emulando el efecto de una pantalla CRT (colores neón y borde fosforescente). El
 - Dificultad incremental: el snake se acelera cada vez que comes una fruta.
 - Game Over con contador de reinicio automático.
 
-**Controles:**
+------------------------------------------------
+Controles:
+------------------------------------------------
 - Flechas del teclado (arriba, abajo, izquierda, derecha) para mover la serpiente.
 
-**Notas:**
+------------------------------------------------
+Notas:
+------------------------------------------------
 - Si la serpiente colisiona con un muro o su propio cuerpo, pierdes una vida y parte de la puntuación.
 - La fruta amarilla aparece aleatoriamente y otorga una vida extra si no tienes el máximo.
 - Cuando pierdes todas las vidas, el juego muestra "Game Over" y reinicia tras unos segundos.
 
+------------------------------------------------
 Requisitos:
+------------------------------------------------
 - Python 3.x
-- Módulo turtle (generalmente viene preinstalado en distribuciones estándar de Python)
+- Módulo turtle (generalmente viene preinstalado en Python estándar)
 
+------------------------------------------------
+Autor: Alejandro Suárez (@alexsf93)
 ===============================================
 """
+
 
 import turtle
 import random
