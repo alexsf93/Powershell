@@ -1,23 +1,35 @@
+#########################################################################################
+#   Script de instalación automatizada de n8n + HTTPS
+#
+#   Este script instala Node.js, n8n y nginx, y configura un reverse proxy HTTPS
+#   con certificado autofirmado para exponer n8n de forma segura sin necesidad de dominio.
+#
+#   Requisitos:
+#     - Ubuntu 22.04/24.04 (probado en Azure)
+#     - Permisos de root/sudo
+#
+#   Autor: Alejandro Suárez (@alexsf93)
+#########################################################################################
 #!/bin/bash
 set -e
 
 N8N_PORT=5678
 
-# Instalar dependencias
+echo "==== Instalando dependencias básicas ===="
 apt-get update -y
 apt-get install -y curl build-essential nginx
 
-# Instalar Node.js 20.x y n8n
+echo "==== Instalando Node.js 20.x y n8n ===="
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt-get install -y nodejs
 npm install -g n8n
 
-# Crear usuario dedicado para n8n
+echo "==== Creando usuario dedicado para n8n ===="
 useradd -m -s /bin/bash n8n || true
 mkdir -p /home/n8n/.n8n
 chown -R n8n:n8n /home/n8n/.n8n
 
-# Crear/actualizar servicio systemd para n8n
+echo "==== Configurando servicio systemd para n8n (HTTPS y cookie segura) ===="
 cat > /etc/systemd/system/n8n.service <<EOF
 [Unit]
 Description=n8n automation
@@ -28,7 +40,7 @@ Type=simple
 User=n8n
 ExecStart=/usr/bin/n8n
 Restart=on-failure
-Environment=PATH=/usr/bin:/usr/local/bin N8N_HOST=localhost N8N_PORT=5678 N8N_PROTOCOL=https N8N_SECURE_COOKIE=true
+Environment=PATH=/usr/bin:/usr/local/bin N8N_HOST=localhost N8N_PORT=${N8N_PORT} N8N_PROTOCOL=https N8N_SECURE_COOKIE=true
 WorkingDirectory=/home/n8n
 
 [Install]
@@ -39,16 +51,23 @@ systemctl daemon-reload
 systemctl enable n8n
 systemctl restart n8n
 
-# Obtener la IP pública para el CN del certificado
-PUBIP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 || hostname)
+echo "==== Generando certificado autofirmado para nginx ===="
 
-# Generar certificado autofirmado
+# Obtener la IP pública de manera fiable en Azure
+PUBIP=$(curl -s -H Metadata:true "http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2021-02-01&format=text")
+if [ -z "$PUBIP" ]; then
+  PUBIP=$(curl -s ifconfig.me)
+fi
+if [[ ! $PUBIP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  PUBIP="localhost"
+fi
+
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout /etc/ssl/private/n8n-selfsigned.key \
   -out /etc/ssl/certs/n8n-selfsigned.crt \
   -subj "/CN=$PUBIP"
 
-# Configuración nginx reverse proxy para HTTPS
+echo "==== Configurando nginx como reverse proxy HTTPS para n8n ===="
 cat > /etc/nginx/sites-available/n8n <<EOF
 server {
     listen 443 ssl;
@@ -78,7 +97,7 @@ ln -sf /etc/nginx/sites-available/n8n /etc/nginx/sites-enabled/n8n
 rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl reload nginx
 
-# Abrir puertos en firewall local si aplica
+echo "==== Ajustando firewall local (si existe) ===="
 if command -v ufw >/dev/null 2>&1; then
     ufw allow 'Nginx Full'
 fi
