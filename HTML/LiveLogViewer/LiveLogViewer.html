@@ -4,211 +4,147 @@
   <meta charset="UTF-8" />
   <title>LiveLogViewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 120 120%22><text y=%2290%22 font-size=%22100%22>📄</text></svg>">
+  <!-- Favicon visor/log SVG -->
+  <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="52" height="34" x="6" y="10" rx="6" fill="%23232e3e" stroke="%235ad1f7" stroke-width="3"/><rect x="14" y="18" width="36" height="5" rx="2.5" fill="%235ad1f7"/><rect x="14" y="27" width="24" height="4" rx="2" fill="white"/><rect x="14" y="34" width="16" height="3" rx="1.5" fill="white"/><rect x="24" y="48" width="16" height="4" rx="2" fill="%235ad1f7"/></svg>'>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
+    :root {
+      --bg: #181c20;
+      --panel: #21252b;
+      --text: #e2f2ff;
+      --panel-title: #5ad1f7;
+      --primary: #5ad1f7;
+      --primary-light: #c5e6fa;
+      --log-bg: #15171c;
+      --log-row: #e2f2ff;
+      --log-row-bg: transparent;
+      --toolbar: #212933;
+      --border: #263041;
+      --btn-bg: #23272b;
+      --btn-live-bg: #263041;
+      --btn-live-bg-active: linear-gradient(90deg, #13e373 60%, #2dfbad 120%);
+    }
+    [data-theme='light'] {
+      --bg: #f5f8fa;
+      --panel: #e7f6fd;
+      --text: #1c2833;
+      --panel-title: #148cbe;
+      --primary: #148cbe;
+      --primary-light: #232e3e;
+      --log-bg: #fff;
+      --log-row: #232e3e;
+      --log-row-bg: #e5f5ff;
+      --toolbar: #cbeffd;
+      --border: #b7e6fa;
+      --btn-bg: #e5f6ff;
+      --btn-live-bg: #b2eafd;
+      --btn-live-bg-active: linear-gradient(90deg, #38e670 60%, #5bfab5 120%);
+    }
+
+    html, body, header, .panel, .log-card, .log-row, .toolbar, .rule-tag, .corner-logo-link, #logMetaBar, .btn-live, .btn-log, .btn-primary, .theme-select {
+      transition:
+        background-color 0.45s cubic-bezier(.54,0,.24,1.1),
+        color 0.38s cubic-bezier(.54,0,.24,1.1),
+        border-color 0.38s cubic-bezier(.54,0,.24,1.1),
+        box-shadow 0.38s cubic-bezier(.54,0,.24,1.1);
+    }
+
     body {
-      background: #181c20;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
       font-family: 'Segoe UI', Arial, sans-serif;
       overflow-x: hidden;
     }
     header {
       padding: 2rem 0 1rem 0;
-      background: #23272b;
+      background: var(--panel);
       box-shadow: 0 1px 16px 0 #14171b36;
       text-align: center;
       margin-bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
     }
     header h1 {
       font-weight: 800;
       font-size: 2.1rem;
       letter-spacing: -1px;
       margin: 0;
-      color: #5ad1f7;
-      text-shadow: 0 2px 24px #09223b66;
+      color: var(--panel-title);
+      text-shadow: 0 2px 24px #09223b22;
     }
-    main {
-      width: 100vw !important;
-      max-width: 100vw !important;
-      padding-left: 0 !important;
-      padding-right: 0 !important;
-      margin: 0 auto;
-    }
-    .container-fluid {
-      padding-left: 0 !important;
-      padding-right: 0 !important;
-      margin-left: 0 !important;
-      margin-right: 0 !important;
-      max-width: 100vw !important;
-      width: 100vw !important;
-    }
-    .row, .col {
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-    .panel-titulo {
-      font-size: 1.22em;
-      color: #5ad1f7;
+    .theme-select {
+      position: absolute;
+      right: 22px; top: 27px;
+      z-index: 20;
+      background: var(--panel);
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      font-size: 1.08em;
+      color: var(--panel-title);
       font-weight: 600;
-      margin-bottom: .2em;
-      margin-top: .6em;
-      letter-spacing: .02em;
+      padding: 2px 13px;
+      outline: none;
+      min-width: 100px;
     }
-    .panel-desc {
-      color: #c5e6fa;
-      font-size: 0.98em;
-      margin-bottom: .4em;
-      opacity: .75;
-    }
-    .panel {
-      background: #21252b;
-      border-radius: 14px;
-      padding: 1.1em 1.2em 1.2em 1.2em;
-      margin-bottom: 1em;
-      margin-top: .8em;
-      box-shadow: 0 2px 8px #101a2150;
-    }
+    .theme-select:focus { border-color: var(--primary);}
+    main {width: 100vw !important; max-width: 100vw !important; margin: 0 auto;}
+    .container-fluid {padding-left:0 !important;padding-right:0 !important;max-width:100vw;width:100vw;}
+    .row, .col {margin:0 !important; padding:0 !important;}
+    .panel-titulo { font-size: 1.22em; color: var(--panel-title); font-weight: 600; margin-bottom: .2em; margin-top: .6em; letter-spacing: .02em;}
+    .panel-desc { color: var(--primary-light); font-size: 0.98em; margin-bottom: .4em; opacity: .75;}
+    .panel { background: var(--panel); border-radius: 14px; padding: 1.1em 1.2em 1.2em 1.2em; margin-bottom: 1em; margin-top: .8em; box-shadow: 0 2px 8px #101a2150;}
     .btn-log {
-      font-size: 1em;
-      font-weight: 500;
-      border-radius: 7px;
-      padding: .36em 1em;
-      margin-right: 0.5em;
-      margin-bottom: .45em;
-      border: none;
-      transition: background .18s, color .16s;
-      background: #23272b;
-      color: #38e6ff;
-      box-shadow: 0 1px 6px #0de3ff11;
-      display: inline-flex;
-      align-items: center;
-      gap: .45em;
+      font-size: 1em; font-weight: 500; border-radius: 7px; padding: .36em 1em; margin-right: 0.5em; margin-bottom: .45em;
+      border: none; transition: background .18s, color .16s;
+      background: var(--btn-bg); color: var(--panel-title); box-shadow: 0 1px 6px #0de3ff11;
+      display: inline-flex; align-items: center; gap: .45em;
     }
-    .btn-log svg {
-      width: 1.12em; height: 1.12em;
-      vertical-align: middle;
-    }
-    .btn-log:hover {
-      background: #3beaff33;
-      color: #0dbd76;
-    }
+    .btn-log svg { width: 1.12em; height: 1.12em; vertical-align: middle; }
+    .btn-log:hover { background: #3beaff33; color: #0dbd76;}
     .btn-live {
-      font-size: 1em;
-      font-weight: 500;
-      border-radius: 7px;
-      padding: .36em 1.12em;
-      margin-bottom: .45em;
-      border: none;
+      font-size: 1em; font-weight: 500; border-radius: 7px; padding: .36em 1.12em; margin-bottom: .45em; border: none;
       transition: background .17s, color .14s;
-      background: #263041;
-      color: #38e6ff;
+      background: var(--btn-live-bg);
+      color: var(--panel-title);
       box-shadow: 0 1px 8px #10e0ff19;
-      display: inline-flex;
-      align-items: center;
-      gap: .49em;
-      position: relative;
-      cursor: pointer;
-      user-select: none;
-      margin-right: .8em;
+      display: inline-flex; align-items: center; gap: .49em;
+      position: relative; cursor: pointer; user-select: none; margin-right: .8em;
     }
     .btn-live.active {
-      background: linear-gradient(90deg, #13e373 60%, #2dfbad 120%);
-      color: #ffffff;
+      background: var(--btn-live-bg-active);
+      color: #fff;
       box-shadow: 0 2px 16px #0ab46740;
     }
-    .btn-live:focus {
-      outline: 2px solid #38e6ff;
-    }
-    .btn-live .info-tooltip {
-      margin-left: 10px;
-      margin-right: 0;
-    }
-    .form-control,
-    .form-control-sm {
+    .btn-live:focus {outline:2px solid var(--panel-title);}
+    .btn-live .info-tooltip { margin-left: 10px; margin-right: 0;}
+    .form-control,.form-control-sm {
       background: #16191e;
       color: #b0eaff;
-      border: 1px solid #263041;
+      border: 1px solid var(--border);
       border-radius: 8px;
     }
-    .form-control:focus {
-      background: #212633;
-      color: #fff;
-    }
-    .form-control-color {
-      min-width: 36px;
-      min-height: 36px;
-      border-radius: 8px;
-      border: none;
-    }
-    .btn-primary {
-      background: linear-gradient(90deg,#1d6fc0 60%, #5ad1f7 120%);
-      color: #fff;
-      border: none;
-      font-weight: 600;
-    }
-    .btn-primary:hover {
-      background: linear-gradient(90deg,#5ad1f7 40%, #1d6fc0 100%);
-      color: #181c20;
-    }
-    .btn-del {
-      background: transparent !important;
-      color: #ff3b56 !important;
-      border: none;
-      padding: 0.13em 0.4em !important;
-      border-radius: 50%;
-      margin-left: 0.5em;
-      font-size: 1.19em;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      line-height: 1;
-      box-shadow: none;
-      transition: background .17s;
-    }
-    .btn-del:hover {
-      background: #ffb0bb1a !important;
-      color: #d31326 !important;
-      box-shadow: 0 2px 8px #ff3b5618;
-    }
-    .btn-del svg {
-      display: block;
-      vertical-align: middle;
-      width: 1.17em;
-      height: 1.17em;
-      pointer-events: none;
-    }
-    .rule-tag {
-      display: inline-flex;
-      align-items: center;
-      background: #283241;
-      border-radius: 16px;
-      padding: 0.15em 1.2em 0.15em 0.7em;
-      font-size: 1em;
-      margin-bottom: 0.2em;
-      box-shadow: 0 2px 8px #1d6fc022;
-      color: #b0eaff;
-      position: relative;
-      margin-right: 0.6em;
-    }
-    .rule-color {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      margin-right: .6em;
-      border-radius: 8px;
-      border: 1px solid #fff3;
-      box-shadow: 0 1px 3px #1118;
-      vertical-align: middle;
-    }
+    [data-theme='light'] .form-control,[data-theme='light'] .form-control-sm {background:#f4fafd; color:#232e3e;}
+    .form-control:focus { background: #212633; color: #fff;}
+    .form-control-color { min-width: 36px; min-height: 36px; border-radius: 8px; border: none;}
+    .btn-primary {background:linear-gradient(90deg,#1d6fc0 60%, #5ad1f7 120%); color:#fff; border:none; font-weight:600;}
+    .btn-primary:hover {background:linear-gradient(90deg,#5ad1f7 40%, #1d6fc0 100%); color:#181c20;}
+    .btn-del {background:transparent !important; color:#ff3b56 !important; border:none; padding:0.13em 0.4em !important; border-radius:50%; margin-left:0.5em; font-size:1.19em; font-weight:700; display:flex; align-items:center; line-height:1; box-shadow:none; transition:background .17s;}
+    .btn-del:hover {background:#ffb0bb1a !important; color:#d31326 !important; box-shadow:0 2px 8px #ff3b5618;}
+    .btn-del svg {display:block; vertical-align:middle; width:1.17em; height:1.17em; pointer-events:none;}
+    .rule-tag {display:inline-flex; align-items:center; background:#283241; border-radius:16px; padding:0.15em 1.2em 0.15em 0.7em; font-size:1em; margin-bottom:0.2em; box-shadow:0 2px 8px #1d6fc022; color:#b0eaff; position:relative; margin-right:0.6em;}
+    [data-theme='light'] .rule-tag {background:#e0f2ff; color:#148cbe;}
+    .rule-color {display:inline-block; width:16px; height:16px; margin-right:.6em; border-radius:8px; border:1px solid #fff3; box-shadow:0 1px 3px #1118; vertical-align:middle;}
     .log-card {
-      background: #15171c;
+      background: var(--log-bg);
       border-radius: 0;
       box-shadow: 0 2px 16px #3ed7ff10;
       padding: 1.1em 0.6em;
       font-family: "Fira Mono", "Consolas", monospace;
       font-size: 1.08em;
-      color: #e2f2ff;
+      color: var(--log-row);
       line-height: 1.55;
       overflow-x: auto;
       overflow-y: auto;
@@ -218,77 +154,35 @@
       width: 100vw;
       white-space: pre;
       margin-bottom: 1em;
-      transition: box-shadow .16s;
       border-radius: 0;
+      border: 3px dashed transparent;
+      outline: none;
+    }
+    .log-card.dragover {
+      border: 3px dashed var(--panel-title);
+      background: #223b4c66;
     }
     .log-row {
       padding: 0.07em 0.4em;
       border-radius: 5px;
-      transition: background .15s, color .13s;
       width: fit-content;
       min-width: 100%;
       display: block;
+      background: var(--log-row-bg);
     }
-    .corner-logos {
-      position: fixed;
-      bottom: 24px;
-      right: 28px;
-      z-index: 1000;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-    .corner-logo-link {
-      background: #21252b;
-      border-radius: 50%;
-      width: 46px;
-      height: 46px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 12px #0005;
-      transition: background .17s, transform .14s;
-      opacity: 0.90;
-      border: 1.5px solid #283345;
-    }
-    .corner-logo-link:hover {
-      background: #5ad1f7;
-      transform: scale(1.13) rotate(-7deg);
-      opacity: 1.0;
-      border-color: #61dafb;
-    }
-    .corner-logo-link svg {
-      width: 26px;
-      height: 26px;
-      display: block;
-      transition: fill .16s;
-    }
+    .corner-logos {position:fixed; bottom:24px; right:28px; z-index:1000; display:flex; flex-direction:column; gap:15px;}
+    .corner-logo-link {background:var(--panel); border-radius:50%; width:46px; height:46px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 12px #0005; transition:background .17s, transform .14s; opacity:0.90; border:1.5px solid var(--border);}
+    .corner-logo-link:hover {background:var(--panel-title); transform:scale(1.13) rotate(-7deg); opacity:1.0; border-color:#61dafb;}
+    .corner-logo-link svg {width:26px; height:26px; display:block; transition:fill .16s;}
     .corner-logo-link.github svg { fill: #f5f6fa;}
     .corner-logo-link.linkedin svg { fill: #1da1f2;}
     .corner-logo-link:hover.github svg { fill: #171515;}
     .corner-logo-link:hover.linkedin svg { fill: #0077b5;}
     ::placeholder { color: #f6fafd !important; opacity:1;}
-    /* Pantalla completa log */
-    .fullscreen-btn {
-      background: transparent;
-      border: none;
-      color: #73d6ff;
-      border-radius: 5px;
-      font-size: 1.4em;
-      margin-left: 8px;
-      padding: 2px 7px 2px 7px;
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      transition: background .16s;
-    }
-    .fullscreen-btn:hover, .fullscreen-btn.active {
-      background: #2b3557;
-      color: #34f6cb;
-    }
-    .fullscreen-target:fullscreen,
-    .fullscreen-target:-webkit-full-screen {
-      background: #15171c;
+    .fullscreen-btn {background:transparent; border:none; color:var(--panel-title); border-radius:5px; font-size:1.4em; margin-left:8px; padding:2px 7px 2px 7px; display:flex; align-items:center; cursor:pointer; transition:background .16s;}
+    .fullscreen-btn:hover, .fullscreen-btn.active {background:#2b3557; color:#34f6cb;}
+    .fullscreen-target:fullscreen, .fullscreen-target:-webkit-full-screen {
+      background: var(--log-bg);
       z-index: 9999;
       width: 100vw !important;
       height: 100vh !important;
@@ -302,76 +196,26 @@
       margin: 0 !important;
       padding: 0 !important;
     }
-    .fullscreen-target:fullscreen .log-row,
-    .fullscreen-target:-webkit-full-screen .log-row {
-      font-size: 1.23em !important;
-      min-width: 100vw;
-    }
-    .fullscreen-target:fullscreen::-webkit-scrollbar,
-    .fullscreen-target:-webkit-full-screen::-webkit-scrollbar {
-      width: 16px;
-      background: #222d3b;
-    }
-    .fullscreen-target:fullscreen::-webkit-scrollbar-thumb,
-    .fullscreen-target:-webkit-full-screen::-webkit-scrollbar-thumb {
-      background: #5ad1f7;
-    }
-    .info-tooltip {
-      display: inline-block;
-      position: relative;
-      cursor: pointer;
-      margin-right: 0;
-    }
-    .info-tooltip svg {
-      filter: drop-shadow(0 2px 6px #41c7ff33);
-      transition: filter .13s;
-    }
-    .info-tooltip:focus svg,
-    .info-tooltip:hover svg {
-      filter: drop-shadow(0 0 4px #51fcfc55);
-    }
+    .fullscreen-target:fullscreen .log-row, .fullscreen-target:-webkit-full-screen .log-row { font-size: 1.23em !important; min-width: 100vw;}
+    .fullscreen-target:fullscreen::-webkit-scrollbar, .fullscreen-target:-webkit-full-screen::-webkit-scrollbar {width:16px;background:#222d3b;}
+    .fullscreen-target:fullscreen::-webkit-scrollbar-thumb, .fullscreen-target:-webkit-full-screen::-webkit-scrollbar-thumb {background:var(--panel-title);}
+    .info-tooltip {display:inline-block; position:relative; cursor:pointer; margin-right:0;}
+    .info-tooltip svg {filter:drop-shadow(0 2px 6px #41c7ff33); transition:filter .13s;}
+    .info-tooltip:focus svg, .info-tooltip:hover svg {filter:drop-shadow(0 0 4px #51fcfc55);}
     .info-tooltip-content {
-      display: none;
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #232f41;
-      color: #b0eaff;
-      border-radius: 10px;
-      padding: 11px 16px;
-      font-size: 0.99em;
-      box-shadow: 0 4px 24px #181e2675;
-      z-index: 100;
-      min-width: 250px;
-      max-width: 320px;
-      white-space: normal;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity .17s;
-      top: 140%;
-      text-align: left;
-      font-weight: 400;
+      display:none; position:absolute; left:50%; transform:translateX(-50%);
+      background:var(--panel); color:var(--panel-title);
+      border-radius:10px; padding:11px 16px; font-size:0.99em; box-shadow:0 4px 24px #181e2675; z-index:100;
+      min-width:250px; max-width:320px; white-space:normal; pointer-events:none; opacity:0; transition:opacity .17s; top:140%; text-align:left; font-weight:400;
     }
-    .info-tooltip:hover .info-tooltip-content,
-    .info-tooltip:focus .info-tooltip-content,
-    .info-tooltip.active .info-tooltip-content {
-      display: block;
-      opacity: 1;
-      pointer-events: auto;
-    }
+    .info-tooltip:hover .info-tooltip-content, .info-tooltip:focus .info-tooltip-content, .info-tooltip.active .info-tooltip-content {display:block; opacity:1; pointer-events:auto;}
     @media (max-width:600px) {
-      .corner-logos { right: 8px; bottom: 8px; gap: 10px;}
-      .corner-logo-link {width: 38px; height: 38px;}
-      .corner-logo-link svg {width: 20px; height: 20px;}
+      .corner-logos { right:8px; bottom:8px; gap:10px;}
+      .corner-logo-link {width:38px; height:38px;}
+      .corner-logo-link svg {width:20px; height:20px;}
       .fullscreen-btn { font-size:1.18em; padding:2px 7px;}
-      .btn-live {padding: .28em 0.5em; font-size:.97em;}
-      .info-tooltip-content {
-        left: 0;
-        transform: none;
-        min-width: 180px;
-        max-width: 88vw;
-        font-size: .97em;
-      }
+      .btn-live {padding:.28em 0.5em; font-size:.97em;}
+      .info-tooltip-content { left:0; transform:none; min-width:180px; max-width:88vw; font-size:.97em;}
     }
     ::selection { background: #4be1ff55; }
   </style>
@@ -379,13 +223,18 @@
 <body>
   <header>
     <h1>LiveLogViewer</h1>
+    <select id="themeSelect" class="theme-select" aria-label="Tema">
+      <option value="auto">🌗 Auto</option>
+      <option value="dark">🌙 Oscuro</option>
+      <option value="light">🌞 Claro</option>
+    </select>
   </header>
   <main class="container-fluid">
     <div class="panel">
       <div class="panel-titulo">1. Abrir archivo de log (modo en vivo, solo Chromium)</div>
       <div class="panel-desc">
         Solo funciona en <b>Chrome, Edge, Opera o Brave</b>. Accede al archivo real en disco, mostrando cambios en tiempo real.<br>
-        <b>Selecciona el archivo:</b>
+        <b>Selecciona el archivo o arrastra un log sobre la vista:</b>
       </div>
       <div class="d-flex flex-wrap align-items-center mb-2 gap-2">
         <button class="btn-log" id="btnOpenLog">
@@ -433,7 +282,7 @@
       </div>
     </div>
     <div id="logMetaBar" class="d-flex justify-content-between align-items-center px-3 py-2 mb-1"
-      style="background:#212933;border-radius:10px 10px 0 0; color:#88eaff; font-size:1.06em; font-weight:500; min-height:36px; display:none;">
+      style="background:var(--toolbar);border-radius:10px 10px 0 0; color:var(--panel-title); font-size:1.06em; font-weight:500; min-height:36px; display:none;">
       <div>
         <span id="linesCount">0 líneas</span>
       </div>
@@ -457,7 +306,9 @@
     </div>
     <div class="row gx-0">
       <div class="col-12">
-        <div id="logDisplay" class="log-card w-100 fullscreen-target" tabindex="0">Carga un log para comenzar.</div>
+        <div id="logDisplay" class="log-card w-100 fullscreen-target" tabindex="0">Carga un log para comenzar.<br><br>
+          <b>Arrastra aquí tu archivo .log o .txt</b>
+        </div>
       </div>
     </div>
   </main>
@@ -470,6 +321,27 @@
     </a>
   </div>
   <script>
+    // Temas (claro/oscuro/auto)
+    const root = document.documentElement;
+    const themeSelect = document.getElementById('themeSelect');
+    function applyTheme(val) {
+      if(val === 'auto') {
+        const prefers = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        root.setAttribute('data-theme', prefers);
+      } else {
+        root.setAttribute('data-theme', val);
+      }
+      localStorage.setItem('llv_theme', val);
+    }
+    function loadTheme() {
+      let th = localStorage.getItem('llv_theme') || 'auto';
+      themeSelect.value = th;
+      applyTheme(th);
+    }
+    themeSelect.addEventListener('change', e=>applyTheme(e.target.value));
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{ if(themeSelect.value==='auto') applyTheme('auto'); });
+    loadTheme();
+
     let logLines = [];
     let rules = [
       { pattern: '\\[ERROR\\]', color: '#ff3333' },
@@ -576,7 +448,7 @@
       const fileDate = document.getElementById('fileDate');
       let shownLines = 0;
       if (!logLines.length) {
-        logDisplay.innerText = 'Carga un log para comenzar.';
+        logDisplay.innerText = 'Carga un log para comenzar.\n\nArrastra aquí tu archivo .log o .txt';
         metaBar.style.display = 'none';
         return;
       }
@@ -620,7 +492,36 @@
       logDisplay.scrollTop = logDisplay.scrollHeight;
     }
 
+    // Arrastrar y soltar archivos
     const logDisplay = document.getElementById('logDisplay');
+    logDisplay.addEventListener('dragover', function(e){
+      e.preventDefault();
+      logDisplay.classList.add('dragover');
+    });
+    logDisplay.addEventListener('dragleave', function(e){
+      logDisplay.classList.remove('dragover');
+    });
+    logDisplay.addEventListener('drop', function(e){
+      e.preventDefault();
+      logDisplay.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      if (!file.name.match(/\.(log|txt)$/i)) {
+        alert('Sólo se permiten archivos .log o .txt');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(ev){
+        logLines = ev.target.result.split('\n');
+        lastModified = file.lastModified;
+        liveFileHandle = null;
+        document.getElementById('liveStatus').style.display = 'none';
+        showLog();
+      }
+      reader.readAsText(file);
+    });
+
+    // Pantalla completa
     const fullscreenBtn = document.getElementById('fullscreenBtn');
     const fullscreenIcon = document.getElementById('fullscreenIcon');
     const fullscreenExitIcon = document.getElementById('fullscreenExitIcon');
@@ -657,7 +558,7 @@
       }
     });
 
-    // ------ LOG EN VIVO COMO BOTÓN ------
+    // LOG EN VIVO COMO BOTÓN
     const btnLive = document.getElementById('btnLive');
     const chkLive = document.getElementById('autoReloadChk');
     function updateLiveBtn() {
@@ -711,9 +612,8 @@
       window.addEventListener('click', function(){ 
         document.querySelectorAll('.info-tooltip.active').forEach(function(ot){ ot.classList.remove('active'); });
       });
+      renderRules();
     });
-
-    renderRules();
   </script>
 </body>
 </html>
