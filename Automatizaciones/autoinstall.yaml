@@ -1,0 +1,35 @@
+#cloud-config
+autoinstall:
+  version: 1
+  identity:
+    hostname: UDIntune
+    username: Naxvan
+    password: "$6$WJVR5bRrE7wvtHHt$y8jD5i4PyqUImnFRdNHKkpmRTeh0VCy2oP8dYYG7Zf0UZ9hguOm8LZyUkPaUNwknP/uwTIX9ULAgWBO8AL4Xz."
+  locale: es_ES
+  keyboard:
+    layout: es
+    variant: ""
+  timezone: Europe/Madrid
+  storage:
+    layout:
+      name: direct
+  updates: all
+  user-data:
+    disable_root: false
+  late-commands:
+    - curtin in-target -- apt-get update
+    - curtin in-target -- apt-get -y dist-upgrade
+    # Instala Microsoft Edge
+    - curtin in-target -- wget -O /tmp/edge.deb https://packages.microsoft.com/repos/edge/pool/main/m/microsoft-edge-stable/microsoft-edge-stable_126.0.2592.81-1_amd64.deb
+    - curtin in-target -- apt-get install -y /tmp/edge.deb
+    # Crea acceso directo a Company Portal en el escritorio de Naxvan
+    - curtin in-target -- bash -c 'cat > /home/Naxvan/Escritorio/CompanyPortal.desktop <<EOF
+[Desktop Entry]
+Name=Microsoft Company Portal
+Exec=microsoft-edge-stable https://portal.manage.microsoft.com
+Icon=msedge
+Type=Application
+Categories=Network;
+EOF'
+    - curtin in-target -- chmod +x /home/Naxvan/Escritorio/CompanyPortal.desktop
+    - curtin in-target -- chown Naxvan:Naxvan /home/Naxvan/Escritorio/CompanyPortal.desktop
